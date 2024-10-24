@@ -139,7 +139,7 @@ const HeatmapChart = ({
   endDate: string;
   today: string;
 }) => {
-  const properties = (logseq.settings?.heatmapProperties || "blockcount")
+  const properties = (logseq.settings?.heatmapJournalPageProperties || "blockcount")
     .split(",")
     .map(p => p.trim())
     .filter(Boolean);
