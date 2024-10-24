@@ -207,18 +207,24 @@ const HeatmapChart = ({
             values={dataset.data}
             showOutOfRangeDays
             classForValue={(value: Datum) => {
-              let classes: string[] = [];
-              classes.push(`color-github-${dataset.scaleFunction(value?.count ?? 0)}`);
-              if (today === value?.date) {
+              if (!value) return 'color-github-0';
+              
+              const month = new Date(value.date).getMonth();
+              const baseClass = `color-github-${dataset.scaleFunction(value.count)}`;
+              const monthClass = month % 2 === 1 ? 'month-odd' : 'month-even';  // 添加两个不同的类
+              const classes = [baseClass, monthClass];
+              
+              if (today === value.date) {
                 classes.push("today");
               }
-              if (value?.isActive) {
+              if (value.isActive) {
                 classes.push("active");
               }
+              
               return classes.join(" ");
             }}
             tooltipDataAttrs={(value: Datum) => ({
-              "data-tip": `<strong>${value?.count ?? 0} ${dataset.property}</strong> on <span class="opacity-70">${value?.originalName}</span>`
+              "data-tip": `<strong>${value?.count ?? 0} </strong> on <span class="opacity-70">${value?.originalName}</span>`
             })}
             onClick={(d: Datum) => {
               if (d) {

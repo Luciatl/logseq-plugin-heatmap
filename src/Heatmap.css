@@ -61,6 +61,12 @@ svg.react-calendar-heatmap {
   .react-calendar-heatmap .color-github-4 {
     fill: #39d353;
   }
+  .react-calendar-heatmap .month-even.color-github-0  {
+    fill: #2a2a2a;
+  }
+  .react-calendar-heatmap .month-odd.color-github-0  {
+    fill: #191919;
+  }
 }
 
 @variants light {
@@ -83,6 +89,12 @@ svg.react-calendar-heatmap {
   }
   .react-calendar-heatmap .color-github-4 {
     fill: #216e39;
+  }
+  .react-calendar-heatmap .month-even.color-github-0  {
+    fill: #efefef;
+  }
+  .react-calendar-heatmap .month-odd.color-github-0  {
+    fill: #f8f8f8;
   }
 }
 
