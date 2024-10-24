@@ -164,7 +164,8 @@ const HeatmapChart = ({
       return {
         property,
         data: activities,
-        totalValue: activities.reduce((acc, cur) => acc + cur.count, 0)
+        totalValue: activities.reduce((acc, cur) => acc + cur.count, 0),
+        scaleFunction: scaleCount
       };
     }
 
@@ -173,10 +174,22 @@ const HeatmapChart = ({
       count: parseFloat(activity.properties?.[property] || "0") || 0
     }));
 
+    // Calculate min and max for dynamic scaling
+    const values = data.map(d => d.count).filter(v => v > 0);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    // Create dynamic scaling function for this property
+    const dynamicScale = (value: number) => {
+      if (value === 0) return 0;
+      return Math.ceil((value - min) / (max - min) * 4) || 1;
+    };
+
     return {
       property,
       data,
-      totalValue: data.reduce((acc, cur) => acc + cur.count, 0)
+      totalValue: data.reduce((acc, cur) => acc + cur.count, 0),
+      scaleFunction: dynamicScale
     };
   });
 
@@ -194,7 +207,7 @@ const HeatmapChart = ({
             showOutOfRangeDays
             classForValue={(value: Datum) => {
               let classes: string[] = [];
-              classes.push(`color-github-${scaleCount(value?.count ?? 0)}`);
+              classes.push(`color-github-${dataset.scaleFunction(value?.count ?? 0)}`);
               if (today === value?.date) {
                 classes.push("today");
               }
