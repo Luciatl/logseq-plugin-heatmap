@@ -43,7 +43,7 @@ const useActivities = (startDate: string, endDate: string) => {
       const date1 = new Date(endDate);
 
       const res: any[] = await logseq.DB.datascriptQuery(`
-        [:find (pull ?p [*]) (count ?b)
+        [:find (pull ?p [* {:block/_page [:block/content]}]) (count ?b)
          :where
          [?b :block/page ?p]
          [?p :block/journal? true]
@@ -53,7 +53,7 @@ const useActivities = (startDate: string, endDate: string) => {
          [(not ?empty)]
          [(>= ?d ${formatAsParam(date0)})]
          [(<= ?d ${formatAsParam(date1)})]]
-     `);
+      `);
 
       if (isMounted()) {
         setRawValue(res);
@@ -61,25 +61,25 @@ const useActivities = (startDate: string, endDate: string) => {
     })();
   }, [startDate, endDate]);
 
+  // 在返回数据时包含页面对象
   return React.useMemo(() => {
-    const date0 = new Date(startDate);
-    const date1 = new Date(endDate);
     const mapping = Object.fromEntries(
       rawValue.map(([page, count]: any[]) => {
         const date = parseJournalDate(page["journal-day"]);
         const datum = {
-          count: count ?? 0,
+          count,
           date: formatAsDashed(date),
           originalName: page["original-name"] as string,
+          properties: page.properties || {},
         };
         return [datum.date, datum];
       })
     );
 
-    const totalDays = differenceInDays(date1, date0) + 1;
+    const totalDays = differenceInDays(new Date(endDate), new Date(startDate)) + 1;
     const newValues: Datum[] = [];
     for (let i = 0; i < totalDays; i++) {
-      const date = formatAsDashed(addDays(date0, i));
+      const date = formatAsDashed(addDays(new Date(startDate), i));
       if (mapping[date]) {
         newValues.push(mapping[date]);
       } else {
@@ -87,6 +87,7 @@ const useActivities = (startDate: string, endDate: string) => {
           date,
           count: 0,
           originalName: formatAsLocale(date),
+          properties: {},
         });
       }
     }
@@ -108,6 +109,7 @@ type Datum = {
   originalName: string;
   count: number;
   isActive?: boolean;
+  properties?: Record<string, any>;
 };
 
 // We have 1 ~ 4 scales for now:
@@ -148,47 +150,80 @@ const HeatmapChart = ({
   endDate: string;
   today: string;
 }) => {
+  const properties = (logseq.settings?.heatmapProperties || "blockcount")
+    .split(",")
+    .map(p => p.trim())
+    .filter(Boolean);
+  
   const activities = useActivities(startDate, endDate);
   const counter = useUpdateCounter(activities);
   const weeks = Math.ceil(activities.length / 7);
-  const totalBlocks = activities.reduce((acc, cur) => acc + cur.count, 0);
+
+  const propertyDatasets = properties.map(property => {
+    if (property === "blockcount") {
+      return {
+        property,
+        data: activities,
+        totalValue: activities.reduce((acc, cur) => acc + cur.count, 0)
+      };
+    }
+
+    const data = activities.map(activity => ({
+      ...activity,
+      count: parseFloat(activity.properties?.[property] || "0") || 0
+    }));
+
+    return {
+      property,
+      data,
+      totalValue: data.reduce((acc, cur) => acc + cur.count, 0)
+    };
+  });
+
   return (
     <div style={{ width: `${weeks * 16}px` }}>
-      <CalendarHeatmap
-        startDate={startDate}
-        endDate={endDate}
-        values={activities}
-        showOutOfRangeDays
-        classForValue={(value: Datum) => {
-          let classes: string[] = [];
-          classes.push(`color-github-${scaleCount(value?.count ?? 0)}`);
-          if (today === value?.date) {
-            classes.push("today");
-          }
-          if (value?.isActive) {
-            classes.push("active");
-          }
-          return classes.join(" ");
-        }}
-        tooltipDataAttrs={getTooltipDataAttrs}
-        onClick={(d: Datum) => {
-          if (d) {
-            logseq.App.pushState("page", { name: d.originalName });
-            // Allow the user to quickly navigate between different days
-            // logseq.hideMainUI();
-          }
-        }}
-        gutterSize={4}
-        transformDayElement={(rect) => {
-          return React.cloneElement(rect, { rx: 3 });
-        }}
-      />
-      <div className="text-xs text-right mt-1">
-        Total journal blocks during this period:{" "}
-        <span className="font-medium">
-          {new Intl.NumberFormat().format(totalBlocks)}
-        </span>
-      </div>
+      {propertyDatasets.map((dataset, index) => (
+        <div key={dataset.property} className="mb-8">
+          <h3 className="text-sm mb-2 opacity-80 capitalize">
+            {dataset.property === "blockcount" ? "Daily Blocks" : dataset.property}
+          </h3>
+          <CalendarHeatmap
+            startDate={startDate}
+            endDate={endDate}
+            values={dataset.data}
+            showOutOfRangeDays
+            classForValue={(value: Datum) => {
+              let classes: string[] = [];
+              classes.push(`color-github-${scaleCount(value?.count ?? 0)}`);
+              if (today === value?.date) {
+                classes.push("today");
+              }
+              if (value?.isActive) {
+                classes.push("active");
+              }
+              return classes.join(" ");
+            }}
+            tooltipDataAttrs={(value: Datum) => ({
+              "data-tip": `<strong>${value?.count ?? 0} ${dataset.property}</strong> on <span class="opacity-70">${value?.originalName}</span>`
+            })}
+            onClick={(d: Datum) => {
+              if (d) {
+                logseq.App.pushState("page", { name: d.originalName });
+              }
+            }}
+            gutterSize={4}
+            transformDayElement={(rect) => {
+              return React.cloneElement(rect, { rx: 3 });
+            }}
+          />
+          <div className="text-xs text-right mt-1">
+            Total {dataset.property}: {" "}
+            <span className="font-medium">
+              {new Intl.NumberFormat().format(dataset.totalValue)}
+            </span>
+          </div>
+        </div>
+      ))}
       <ReactTooltip key={counter} effect="solid" html />
     </div>
   );
