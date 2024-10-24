@@ -121,17 +121,6 @@ const scaleCount = (v: number) => {
   return Math.ceil(Math.min(v, 40) / 10);
 };
 
-const getTooltipDataAttrs = (value: Datum) => {
-  // Temporary hack around null value.date issue
-  if (!value || !value.date) {
-    return null;
-  }
-  // Configuration for react-tooltip
-  const count = value.count === 0 ? "No" : value.count;
-  return {
-    "data-tip": `<strong>${count} journal blocks</strong> on <span class="opacity-70">${value.originalName}</span>`,
-  };
-};
 
 const useUpdateCounter = (v: any) => {
   const [state, setState] = React.useState(0);
@@ -154,6 +143,18 @@ const HeatmapChart = ({
     .split(",")
     .map(p => p.trim())
     .filter(Boolean);
+  
+  const displayNames = (logseq.settings?.heatmapDisplayNames || "Daily Blocks")
+    .split(",")
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  const propertyDisplayMap = Object.fromEntries(
+    properties.map((prop, index) => [
+      prop,
+      displayNames[index] || prop // fallback to property name if no display name
+    ])
+  );
   
   const activities = useActivities(startDate, endDate);
   const counter = useUpdateCounter(activities);
@@ -196,9 +197,9 @@ const HeatmapChart = ({
   return (
     <div style={{ width: `${weeks * 16}px` }}>
       {propertyDatasets.map((dataset, index) => (
-        <div key={dataset.property} className="mb-8">
-          <h3 className="text-sm mb-2 opacity-80 capitalize">
-            {dataset.property === "blockcount" ? "Daily Blocks" : dataset.property}
+        <div key={dataset.property} className="mb-2">
+          <h3 className="text-sm mb-1 opacity-80 capitalize">
+            {propertyDisplayMap[dataset.property]}
           </h3>
           <CalendarHeatmap
             startDate={startDate}
@@ -229,8 +230,8 @@ const HeatmapChart = ({
               return React.cloneElement(rect, { rx: 3 });
             }}
           />
-          <div className="text-xs text-right mt-1">
-            Total {dataset.property}: {" "}
+          <div className="text-xs text-right mt-1 text-[10px]">
+            Total {propertyDisplayMap[dataset.property]}: {" "}
             <span className="font-medium">
               {new Intl.NumberFormat().format(dataset.totalValue)}
             </span>
@@ -279,7 +280,7 @@ const DateRange = ({
   if (range) {
     const [startDate, endDate] = range;
     return (
-      <div className="text-xs mb-2">
+      <div className="text-xs mb-4">
         From
         <span className="date-range-tag" onClick={() => onRangeClick(true)}>
           {formatAsLocale(startDate)}
