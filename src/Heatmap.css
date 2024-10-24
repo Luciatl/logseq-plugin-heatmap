@@ -4,6 +4,7 @@
     rounded absolute
     shadow-md font-sans light:text-gray-500 dark:text-gray-300;
   user-select: none;
+  padding-left: 0.6rem;
 }
 
 svg.react-calendar-heatmap {

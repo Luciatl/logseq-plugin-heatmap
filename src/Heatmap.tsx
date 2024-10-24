@@ -193,11 +193,28 @@ const HeatmapChart = ({
       scaleFunction: dynamicScale
     };
   });
-
   return (
-    <div style={{ width: `${weeks * 16}px` }}>
+    <div className="heatmap-container">
       {propertyDatasets.map((dataset, index) => (
-        <div key={dataset.property} className="mb-2">
+        <div key={dataset.property} style={{ display: 'flex', marginBottom: '3px' }}>
+          {/* Weekday labels for each heatmap */}
+          <div className="weekday-labels" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-evenly', // Align labels to start
+            marginRight: '2px',
+            paddingTop: '38px', // Adjust to align with heatmap
+            fontSize: '8px', // Adjust font size for better visibility
+            color: 'var(--ls-secondary-text-color)',
+            height: `152px`, // Match the height of the heatmap
+            textAlign: 'center',
+          }}>
+            <div>Mon</div>
+            <div>Wed</div>
+            <div>Fri</div>
+          </div>
+
+        <div style={{ width: `${weeks * 16}px` }}>
           <h3 className="text-sm mb-1 opacity-80 capitalize">
             {propertyDisplayMap[dataset.property]}
           </h3>
@@ -211,7 +228,7 @@ const HeatmapChart = ({
               
               const month = new Date(value.date).getMonth();
               const baseClass = `color-github-${dataset.scaleFunction(value.count)}`;
-              const monthClass = month % 2 === 1 ? 'month-odd' : 'month-even';  // 添加两个不同的类
+              const monthClass = month % 2 === 1 ? 'month-odd' : 'month-even';
               const classes = [baseClass, monthClass];
               
               if (today === value.date) {
@@ -241,6 +258,7 @@ const HeatmapChart = ({
             <span className="font-medium">
               {new Intl.NumberFormat().format(dataset.totalValue)}
             </span>
+          </div>
           </div>
         </div>
       ))}
