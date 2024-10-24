@@ -5,6 +5,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { getDisplayDateFormat, triggerIconName } from "./utils";
+import { settingsConfig } from "./settingsConfig";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -12,6 +13,9 @@ const css = (t, ...args) => String.raw(t, ...args);
 function main() {
   const pluginId = logseq.baseInfo.id;
   console.info(`#${pluginId}: MAIN`);
+
+  logseq.useSettingsSchema(settingsConfig);
+
   const node = ReactDOM.createRoot(document.getElementById("app")!);
   node.render(<App />);
 
