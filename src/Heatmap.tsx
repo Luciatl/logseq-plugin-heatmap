@@ -61,7 +61,6 @@ const useActivities = (startDate: string, endDate: string) => {
     })();
   }, [startDate, endDate]);
 
-  // 在返回数据时包含页面对象
   return React.useMemo(() => {
     const mapping = Object.fromEntries(
       rawValue.map(([page, count]: any[]) => {
@@ -175,12 +174,10 @@ const HeatmapChart = ({
       count: parseFloat(activity.properties?.[property] || "0") || 0
     }));
 
-    // Calculate min and max for dynamic scaling
+    // dynamic scaling for custom properties
     const values = data.map(d => d.count).filter(v => v > 0);
     const min = Math.min(...values);
     const max = Math.max(...values);
-
-    // Create dynamic scaling function for this property
     const dynamicScale = (value: number) => {
       if (value === 0) return 0;
       return Math.ceil((value - min) / (max - min) * 4) || 1;
